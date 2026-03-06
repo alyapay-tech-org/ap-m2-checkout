@@ -21,15 +21,19 @@ class AlyaPayApiException extends Exception
      * @param array $validationErrors [{field, message}, ...]
      * @param string $rawBody Raw response body
      */
+    /** @var int|null AlyaPay API business code (distinct from Exception::$code) */
+    private ?int $apiCode = null;
+
     public function __construct(
         string $message = '',
         private int $statusCode = 0,
         private ?string $key = null,
-        private ?int $code = null,
+        ?int $apiCode = null,
         private array $parameters = [],
         private array $validationErrors = [],
         private string $rawBody = ''
     ) {
+        $this->apiCode = $apiCode;
         parent::__construct($message ?: "AlyaPay API error: HTTP $statusCode");
     }
 
@@ -45,7 +49,7 @@ class AlyaPayApiException extends Exception
 
     public function getApiCode(): ?int
     {
-        return $this->code;
+        return $this->apiCode;
     }
 
     public function getParameters(): array

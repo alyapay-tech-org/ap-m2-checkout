@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
+         bootstrap="Test/bootstrap.php">
+    <testsuites>
+        <testsuite name="AlyaPay Unit">
+            <directory>Test/Unit</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

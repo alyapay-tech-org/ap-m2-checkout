@@ -14,6 +14,9 @@
         "magento/module-payment": "*",
         "magento/module-checkout": "*"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5 || ^10.0"
+    },
     "autoload": {
         "files": [
             "registration.php"
