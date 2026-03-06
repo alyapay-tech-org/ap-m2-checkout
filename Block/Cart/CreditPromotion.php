@@ -91,6 +91,21 @@ class CreditPromotion extends Template
         return $this->config->getWidgetTheme();
     }
 
+    public function getWidgetVariant(): string
+    {
+        return $this->config->getWidgetVariant();
+    }
+
+    public function getWidgetDetail(): string
+    {
+        return $this->config->getWidgetDetail();
+    }
+
+    public function getWidgetLogoPosition(): string
+    {
+        return $this->config->getWidgetLogoPosition();
+    }
+
     public function getWidgetLang(): string
     {
         try {

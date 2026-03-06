@@ -19,9 +19,11 @@ class WidgetTheme implements OptionSourceInterface
     {
         return [
             ['value' => 'light', 'label' => __('Light')],
-            ['value' => 'dark', 'label' => __('Dark')],
             ['value' => 'light-plain', 'label' => __('Light (Plain)')],
+            ['value' => 'dark', 'label' => __('Dark')],
             ['value' => 'dark-plain', 'label' => __('Dark (Plain)')],
+            ['value' => 'neutral', 'label' => __('Neutral')],
+            ['value' => 'neutral-plain', 'label' => __('Neutral (Plain)')],
         ];
     }
 }

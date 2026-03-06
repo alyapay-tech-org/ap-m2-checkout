@@ -20,6 +20,9 @@ class ConfigProvider implements ConfigProviderInterface
     private const XML_PATH_WIDGET_CHECKOUT_ENABLED = 'payment/alyapay/widget_checkout_enabled';
     private const XML_PATH_WIDGET_THEME = 'payment/alyapay/widget_theme';
     private const XML_PATH_WIDGET_CURRENCY = 'payment/alyapay/widget_currency';
+    private const XML_PATH_WIDGET_VARIANT = 'payment/alyapay/widget_variant';
+    private const XML_PATH_WIDGET_DETAIL = 'payment/alyapay/widget_detail';
+    private const XML_PATH_WIDGET_LOGO_POSITION = 'payment/alyapay/widget_logo_position';
 
     /**
      * @var ScopeConfigInterface
@@ -63,6 +66,9 @@ class ConfigProvider implements ConfigProviderInterface
 
         $widgetEnabled = (bool) $this->scopeConfig->getValue(self::XML_PATH_WIDGET_CHECKOUT_ENABLED, ScopeInterface::SCOPE_STORE);
         $widgetTheme = $this->scopeConfig->getValue(self::XML_PATH_WIDGET_THEME, ScopeInterface::SCOPE_STORE) ?: 'light';
+        $widgetVariant = $this->scopeConfig->getValue(self::XML_PATH_WIDGET_VARIANT, ScopeInterface::SCOPE_STORE) ?: 'default';
+        $widgetDetail = $this->scopeConfig->getValue(self::XML_PATH_WIDGET_DETAIL, ScopeInterface::SCOPE_STORE) ?: 'modal';
+        $widgetLogoPosition = $this->scopeConfig->getValue(self::XML_PATH_WIDGET_LOGO_POSITION, ScopeInterface::SCOPE_STORE) ?: 'right';
         $widgetCurrency = $this->scopeConfig->getValue(self::XML_PATH_WIDGET_CURRENCY, ScopeInterface::SCOPE_STORE);
         if (empty(trim((string) $widgetCurrency))) {
             try {
@@ -81,6 +87,9 @@ class ConfigProvider implements ConfigProviderInterface
                     'widget' => [
                         'enabled' => $widgetEnabled,
                         'theme' => $widgetTheme,
+                        'variant' => $widgetVariant,
+                        'detail' => $widgetDetail,
+                        'logo_position' => $widgetLogoPosition,
                         'currency' => trim($widgetCurrency),
                     ],
                 ],

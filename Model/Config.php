@@ -33,6 +33,9 @@ class Config
     private const XML_PATH_WIDGET_CART_ENABLED = 'payment/alyapay/widget_cart_enabled';
     private const XML_PATH_WIDGET_THEME = 'payment/alyapay/widget_theme';
     private const XML_PATH_WIDGET_CURRENCY = 'payment/alyapay/widget_currency';
+    private const XML_PATH_WIDGET_VARIANT = 'payment/alyapay/widget_variant';
+    private const XML_PATH_WIDGET_DETAIL = 'payment/alyapay/widget_detail';
+    private const XML_PATH_WIDGET_LOGO_POSITION = 'payment/alyapay/widget_logo_position';
 
     /**
      * @var ScopeConfigInterface
@@ -282,7 +285,7 @@ class Config
     }
 
     /**
-     * Widget theme (light, dark, light-plain, dark-plain)
+     * Widget theme (light, light-plain, dark, dark-plain, neutral, neutral-plain)
      *
      * @param int|null $storeId
      * @return string
@@ -290,6 +293,39 @@ class Config
     public function getWidgetTheme(?int $storeId = null): string
     {
         return (string) ($this->scopeConfig->getValue(self::XML_PATH_WIDGET_THEME, ScopeInterface::SCOPE_STORE, $storeId) ?: 'light');
+    }
+
+    /**
+     * Widget variant (default, interactive)
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getWidgetVariant(?int $storeId = null): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_PATH_WIDGET_VARIANT, ScopeInterface::SCOPE_STORE, $storeId) ?: 'default');
+    }
+
+    /**
+     * Widget detail (modal, panel)
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getWidgetDetail(?int $storeId = null): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_PATH_WIDGET_DETAIL, ScopeInterface::SCOPE_STORE, $storeId) ?: 'modal');
+    }
+
+    /**
+     * Widget logo position (right, left)
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getWidgetLogoPosition(?int $storeId = null): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_PATH_WIDGET_LOGO_POSITION, ScopeInterface::SCOPE_STORE, $storeId) ?: 'right');
     }
 
     /**
