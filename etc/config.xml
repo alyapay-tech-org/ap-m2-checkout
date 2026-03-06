@@ -17,6 +17,9 @@
                 <widget_product_enabled>0</widget_product_enabled>
                 <widget_cart_enabled>0</widget_cart_enabled>
                 <widget_theme>light</widget_theme>
+                <widget_variant>default</widget_variant>
+                <widget_detail>modal</widget_detail>
+                <widget_logo_position>right</widget_logo_position>
                 <widget_currency></widget_currency>
                 <transaction_expiry>30</transaction_expiry>
                 <amount_min>500</amount_min>

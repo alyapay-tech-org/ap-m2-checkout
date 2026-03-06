@@ -107,7 +107,7 @@ We will add the webhook path automatically. Provide the resulting full URL to Al
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Webhook Secret</label>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
-                    <comment>HMAC-SHA256 secret for webhook signature verification. Provided by AlyaPay when configuring webhooks.</comment>
+                    <comment><![CDATA[Required for production. HMAC-SHA256 secret for webhook signature verification. Webhooks are rejected if not configured. Provided by AlyaPay when configuring webhooks.]]></comment>
                     <config_path>payment/alyapay/webhook_secret</config_path>
                     <depends>
                         <field id="alyapay_general/active">1</field>
@@ -187,6 +187,38 @@ We will add the webhook path automatically. Provide the resulting full URL to Al
                     <depends>
                         <field id="alyapay_general/active">1</field>
                         <field id="widget_checkout_enabled">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_variant" translate="label" type="select" sortOrder="31"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Variant</label>
+                    <source_model>AlyaPay\Payment\Model\Config\Source\WidgetVariant</source_model>
+                    <config_path>payment/alyapay/widget_variant</config_path>
+                    <comment>default | interactive</comment>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_detail" translate="label" type="select" sortOrder="32"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Detail</label>
+                    <source_model>AlyaPay\Payment\Model\Config\Source\WidgetDetail</source_model>
+                    <config_path>payment/alyapay/widget_detail</config_path>
+                    <comment>modal | panel</comment>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_logo_position" translate="label" type="select" sortOrder="33"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Logo Position</label>
+                    <source_model>AlyaPay\Payment\Model\Config\Source\WidgetLogoPosition</source_model>
+                    <config_path>payment/alyapay/widget_logo_position</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
                     </depends>
                 </field>
 
