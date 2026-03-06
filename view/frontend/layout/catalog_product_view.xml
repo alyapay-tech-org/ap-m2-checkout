@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="product.info.main">
+            <block class="AlyaPay\Payment\Block\Product\CreditPromotion"
+                   name="product.info.alyapay.creditpromo"
+                   as="alyapay_credit_promo"
+                   template="AlyaPay_Payment::product/credit-promotion.phtml"
+                   after="product.info.price" />
+        </referenceContainer>
+    </body>
+</page>

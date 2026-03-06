@@ -1,0 +1,219 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="payment">
+
+            <!-- ===================== AlyaPay (1 accordion with 5 sub-groups) ===================== -->
+            <group id="alyapay" translate="label" type="group" sortOrder="100"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>AlyaPay</label>
+
+                <group id="alyapay_general" translate="label" type="group" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>General</label>
+
+                <field id="active" translate="label" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <config_path>payment/alyapay/active</config_path>
+                </field>
+
+                <field id="title" translate="label" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Title</label>
+                    <config_path>payment/alyapay/title</config_path>
+                </field>
+
+                <field id="debug" translate="label" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Debug Mode</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <config_path>payment/alyapay/debug</config_path>
+                </field>
+
+                <field id="transaction_expiry" translate="label" type="text" sortOrder="35"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Transaction Expiry (minutes)</label>
+                    <backend_model>AlyaPay\Payment\Model\Config\Backend\TransactionExpiry</backend_model>
+                    <comment>0 = no expiry, 30 = default. Max 60. Synced to AlyaPay when saving config.</comment>
+                    <config_path>payment/alyapay/transaction_expiry</config_path>
+                    <validate>validate-number validate-zero-or-greater</validate>
+                </field>
+
+                <field id="amount_min" translate="label" type="text" sortOrder="36"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Minimum Order Amount</label>
+                    <comment>AlyaPay is hidden when order total is below this. Read-only.</comment>
+                    <config_path>payment/alyapay/amount_min</config_path>
+                    <frontend_model>AlyaPay\Payment\Block\Adminhtml\System\Config\ReadonlyField</frontend_model>
+                    <backend_model>AlyaPay\Payment\Model\Config\Backend\AmountLimit</backend_model>
+                </field>
+
+                <field id="amount_max" translate="label" type="text" sortOrder="37"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Maximum Order Amount</label>
+                    <comment>AlyaPay is hidden when order total exceeds this. Read-only.</comment>
+                    <config_path>payment/alyapay/amount_max</config_path>
+                    <frontend_model>AlyaPay\Payment\Block\Adminhtml\System\Config\ReadonlyField</frontend_model>
+                    <backend_model>AlyaPay\Payment\Model\Config\Backend\AmountLimit</backend_model>
+                </field>
+                </group>
+
+                <group id="alyapay_api" translate="label" type="group" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>API</label>
+
+                <field id="api_base_url" translate="label" type="text" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>API Base URL</label>
+                    <comment>Sandbox: https://sandbox-api.alyapay.com | Production: https://api.alyapay.com</comment>
+                    <config_path>payment/alyapay/api_base_url</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="api_key" translate="label" type="obscure" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>API Key</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                    <config_path>payment/alyapay/api_key</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+                </group>
+
+                <group id="alyapay_webhooks" translate="label" type="group" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Webhooks</label>
+
+                <field id="webhook_url" translate="label" type="text" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Your Store URL</label>
+                    <comment><![CDATA[
+Enter only your store URL (e.g. https://your-store.com).
+We will add the webhook path automatically. Provide the resulting full URL to AlyaPay when configuring webhooks.
+                    ]]></comment>
+                    <config_path>payment/alyapay/webhook_url</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="webhook_secret" translate="label" type="obscure" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Webhook Secret</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                    <comment>HMAC-SHA256 secret for webhook signature verification. Provided by AlyaPay when configuring webhooks.</comment>
+                    <config_path>payment/alyapay/webhook_secret</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+                </group>
+
+                <group id="alyapay_statuses" translate="label" type="group" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Order Status Mapping</label>
+
+                <field id="status_approved" translate="label" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Status for Approved</label>
+                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <comment>Order status when AlyaPay sends transaction.approved webhook.</comment>
+                    <config_path>payment/alyapay/status_approved</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="status_canceled" translate="label" type="select" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Status for Canceled</label>
+                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <comment>Order status when AlyaPay sends transaction.cancelled webhook.</comment>
+                    <config_path>payment/alyapay/status_canceled</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="status_expired" translate="label" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Status for Expired</label>
+                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <comment>Order status when AlyaPay sends transaction.expired webhook.</comment>
+                    <config_path>payment/alyapay/status_expired</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+                </group>
+
+                <group id="alyapay_widget" translate="label" type="group" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Widgets</label>
+
+                <field id="widget_checkout_enabled" translate="label" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Checkout Widget</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Shows when AlyaPay payment method is selected at checkout.</comment>
+                    <config_path>payment/alyapay/widget_checkout_enabled</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_currency" translate="label" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Currency</label>
+                    <comment>e.g. MAD, Dhs. Leave empty for store base currency.</comment>
+                    <config_path>payment/alyapay/widget_currency</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                        <field id="widget_checkout_enabled">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_theme" translate="label" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Theme</label>
+                    <source_model>AlyaPay\Payment\Model\Config\Source\WidgetTheme</source_model>
+                    <config_path>payment/alyapay/widget_theme</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                        <field id="widget_checkout_enabled">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_product_enabled" translate="label" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Credit Promo on Product Page</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Shows BNPL simulation below product price.</comment>
+                    <config_path>payment/alyapay/widget_product_enabled</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+
+                <field id="widget_cart_enabled" translate="label" type="select" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable Credit Promo on Cart</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Shows BNPL simulation below cart total.</comment>
+                    <config_path>payment/alyapay/widget_cart_enabled</config_path>
+                    <depends>
+                        <field id="alyapay_general/active">1</field>
+                    </depends>
+                </field>
+                </group>
+
+            </group>
+        </section>
+    </system>
+</config>

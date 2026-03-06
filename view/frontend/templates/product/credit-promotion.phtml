@@ -1,0 +1,13 @@
+<?php
+/**
+ * @var $block \AlyaPay\Payment\Block\Product\CreditPromotion
+ */
+?>
+<div class="alyapay-credit-promo">
+    <alya-placement key="credit-promotion"
+                    price="<?= $block->escapeHtmlAttr($block->getWidgetPrice()) ?>"
+                    currency="<?= $block->escapeHtmlAttr($block->getWidgetCurrency()) ?>"
+                    theme="<?= $block->escapeHtmlAttr($block->getWidgetTheme()) ?>"
+                    lang="<?= $block->escapeHtmlAttr($block->getWidgetLang()) ?>"
+                    installments="4"></alya-placement>
+</div>

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="cart.summary">
+            <block class="AlyaPay\Payment\Block\Cart\CreditPromotion"
+                   name="checkout.cart.alyapay.creditpromo"
+                   as="alyapay_credit_promo"
+                   template="AlyaPay_Payment::cart/credit-promotion.phtml"
+                   before="checkout.cart.methods.bottom" />
+        </referenceContainer>
+    </body>
+</page>
