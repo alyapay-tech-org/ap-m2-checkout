@@ -73,6 +73,16 @@ class SessionIntentService
             ];
         }
 
+        $shippingInclTax = (float) $order->getShippingAmount() + (float) $order->getShippingTaxAmount();
+        if ($shippingInclTax > 0) {
+            $items[] = [
+                'id' => 'shipping',
+                'name' => substr((string) ($order->getShippingDescription() ?: 'Shipping'), 0, 255),
+                'price' => $shippingInclTax,
+                'quantity' => 1,
+            ];
+        }
+
         if (empty($items)) {
             $items[] = [
                 'id' => 'order_' . $order->getIncrementId(),
