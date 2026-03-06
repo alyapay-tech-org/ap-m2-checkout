@@ -48,10 +48,6 @@ class MessageMap
             4235 => [self::AUDIENCE_ADMIN, 'alyapay.error.invalid_order_data'],
             4239 => [self::AUDIENCE_CUSTOMER, 'alyapay.error.amount_too_low'],
             4242 => [self::AUDIENCE_CUSTOMER, 'alyapay.error.amount_too_high'],
-            // BNPL / Credit errors (future use)
-            4014 => [self::AUDIENCE_CUSTOMER, 'alyapay.error.customer_blocked'],
-            4018 => [self::AUDIENCE_CUSTOMER, 'alyapay.error.balance_exceeded'],
-            4019 => [self::AUDIENCE_CUSTOMER, 'alyapay.error.monthly_limit_exceeded'],
         ],
         Context::STATUS_CHECK => [
             4042 => [self::AUDIENCE_ADMIN, 'alyapay.error.transaction_not_found'],
@@ -76,9 +72,6 @@ class MessageMap
         'alyapay.error.status_check_failed' => 'Unable to verify payment status. Please contact support.',
         'alyapay.error.config_sync_failed' => 'Unable to sync configuration to AlyaPay. Please try again later.',
         'alyapay.error.generic' => 'A payment error occurred. Please try again or contact support.',
-        'alyapay.error.customer_blocked' => 'Payment is currently unavailable due to overdue payments.',
-        'alyapay.error.balance_exceeded' => 'Your outstanding balance exceeds the limit. Please pay existing installments.',
-        'alyapay.error.monthly_limit_exceeded' => 'Monthly payment limit reached. Please try again next month.',
     ];
 
     /**
