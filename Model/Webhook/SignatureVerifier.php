@@ -35,7 +35,7 @@ class SignatureVerifier
 
     /**
      * Verify webhook signature.
-     * If webhook_secret is not configured, returns true (skip verification).
+     * Requires webhook_secret to be configured. Rejects webhooks when secret is missing.
      *
      * @param string $payload Raw request body
      * @param string|null $signatureHeader Value of X-Alya-Signature
@@ -51,7 +51,8 @@ class SignatureVerifier
     ): bool {
         $secret = $this->config->getWebhookSecret($storeId);
         if (empty($secret)) {
-            return true;
+            $this->logger->warning('AlyaPay webhook: webhook_secret is not configured. Configure it in Admin.');
+            return false;
         }
 
         if (empty($signatureHeader)) {

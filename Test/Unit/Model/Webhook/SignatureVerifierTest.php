@@ -30,16 +30,22 @@ class SignatureVerifierTest extends TestCase
         $this->verifier = new SignatureVerifier($this->config, $this->logger);
     }
 
-    public function testVerifyNoSecretReturnsTrue(): void
+    public function testVerifyNoSecretReturnsFalse(): void
     {
         $this->config->method('getWebhookSecret')->willReturn('');
-        $this->assertTrue($this->verifier->verify('{"event":"test"}', null, null));
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with('AlyaPay webhook: webhook_secret is not configured. Configure it in Admin.');
+        $this->assertFalse($this->verifier->verify('{"event":"test"}', null, null));
     }
 
-    public function testVerifyNullSecretReturnsTrue(): void
+    public function testVerifyNullSecretReturnsFalse(): void
     {
         $this->config->method('getWebhookSecret')->willReturn(null);
-        $this->assertTrue($this->verifier->verify('{"event":"test"}', null, null));
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with('AlyaPay webhook: webhook_secret is not configured. Configure it in Admin.');
+        $this->assertFalse($this->verifier->verify('{"event":"test"}', null, null));
     }
 
     public function testVerifyValidSignatureReturnsTrue(): void
