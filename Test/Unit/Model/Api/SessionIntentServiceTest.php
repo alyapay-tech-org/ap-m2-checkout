@@ -17,9 +17,11 @@ use Psr\Log\LoggerInterface;
 
 class SessionIntentServiceTest extends TestCase
 {
-    private Client&MockObject $client;
+    /** @var Client|MockObject */
+    private $client;
 
-    private LoggerInterface&MockObject $logger;
+    /** @var LoggerInterface|MockObject */
+    private $logger;
 
     private SessionIntentService $service;
 
@@ -157,7 +159,10 @@ class SessionIntentServiceTest extends TestCase
         $this->assertEquals(1, $capturedPayload['items'][0]['quantity']);
     }
 
-    private function createOrderMock(string $incrementId, float $grandTotal, string $currency, int $storeId): Order&MockObject
+    /**
+     * @return Order|MockObject
+     */
+    private function createOrderMock(string $incrementId, float $grandTotal, string $currency, int $storeId)
     {
         $order = $this->createMock(Order::class);
         $order->method('getIncrementId')->willReturn($incrementId);

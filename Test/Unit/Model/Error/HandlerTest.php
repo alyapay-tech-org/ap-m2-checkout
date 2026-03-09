@@ -19,9 +19,11 @@ use Psr\Log\LoggerInterface;
 
 class HandlerTest extends TestCase
 {
-    private MessageMap&MockObject $messageMap;
+    /** @var MessageMap|MockObject */
+    private $messageMap;
 
-    private LoggerInterface&MockObject $logger;
+    /** @var LoggerInterface|MockObject */
+    private $logger;
 
     private Handler $handler;
 

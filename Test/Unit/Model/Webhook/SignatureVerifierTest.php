@@ -16,11 +16,14 @@ use Psr\Log\LoggerInterface;
 
 class SignatureVerifierTest extends TestCase
 {
-    private Config&MockObject $config;
+    /** @var Config|MockObject */
+    private $config;
 
-    private LoggerInterface&MockObject $logger;
+    /** @var LoggerInterface|MockObject */
+    private $logger;
 
-    private SignatureVerifier $verifier;
+    /** @var SignatureVerifier */
+    private $verifier;
 
     protected function setUp(): void
     {

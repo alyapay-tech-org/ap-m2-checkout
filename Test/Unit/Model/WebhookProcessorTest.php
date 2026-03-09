@@ -19,13 +19,17 @@ use Psr\Log\LoggerInterface;
 
 class WebhookProcessorTest extends TestCase
 {
-    private Order&MockObject $orderHelper;
+    /** @var Order|MockObject */
+    private $orderHelper;
 
-    private Config&MockObject $config;
+    /** @var Config|MockObject */
+    private $config;
 
-    private Json&MockObject $json;
+    /** @var Json|MockObject */
+    private $json;
 
-    private LoggerInterface&MockObject $logger;
+    /** @var LoggerInterface|MockObject */
+    private $logger;
 
     private WebhookProcessor $processor;
 
@@ -207,7 +211,10 @@ class WebhookProcessorTest extends TestCase
         $this->assertTrue($this->processor->process($payload));
     }
 
-    private function createOrderMock(string $state, bool $hasInvoices): SalesOrder&MockObject
+    /**
+     * @return SalesOrder|MockObject
+     */
+    private function createOrderMock(string $state, bool $hasInvoices)
     {
         $order = $this->createMock(SalesOrder::class);
         $order->method('getState')->willReturn($state);
