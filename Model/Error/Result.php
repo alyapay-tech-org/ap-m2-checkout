@@ -17,6 +17,18 @@ class Result
     public const AUDIENCE_ADMIN = 'admin';
     public const AUDIENCE_CUSTOMER = 'customer';
 
+    /** @var string */
+    private string $userMessage;
+
+    /** @var string */
+    private string $logMessage;
+
+    /** @var string */
+    private string $severity;
+
+    /** @var string */
+    private string $audience;
+
     /**
      * @param string $userMessage Message suitable for display to user (admin/frontend)
      * @param string $logMessage Message for logs (can include more detail)
@@ -24,11 +36,15 @@ class Result
      * @param string $audience admin|customer - who should see the message
      */
     public function __construct(
-        private readonly string $userMessage,
-        private readonly string $logMessage,
-        private readonly string $severity = self::SEVERITY_ERROR,
-        private readonly string $audience = self::AUDIENCE_ADMIN
+        string $userMessage,
+        string $logMessage,
+        string $severity = self::SEVERITY_ERROR,
+        string $audience = self::AUDIENCE_ADMIN
     ) {
+        $this->userMessage = $userMessage;
+        $this->logMessage = $logMessage;
+        $this->severity = $severity;
+        $this->audience = $audience;
     }
 
     public function getUserMessage(): string
