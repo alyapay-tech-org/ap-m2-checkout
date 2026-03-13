@@ -1,7 +1,8 @@
 define([
     'ko',
     'Magento_Checkout/js/view/payment/default',
-    'Magento_Checkout/js/model/quote'
+    'Magento_Checkout/js/model/quote',
+    'AlyaPay_Payment/js/binding/alyapay-placement'
 ], function (ko, Component, quote) {
     'use strict';
 
@@ -53,6 +54,30 @@ define([
                 window.checkoutConfig.payment.alyapay.widget.theme
                 ? window.checkoutConfig.payment.alyapay.widget.theme
                 : 'light';
+        },
+
+        getWidgetVariant: function () {
+            return window.checkoutConfig.payment.alyapay &&
+                window.checkoutConfig.payment.alyapay.widget &&
+                window.checkoutConfig.payment.alyapay.widget.variant
+                ? window.checkoutConfig.payment.alyapay.widget.variant
+                : 'default';
+        },
+
+        getWidgetDetail: function () {
+            return window.checkoutConfig.payment.alyapay &&
+                window.checkoutConfig.payment.alyapay.widget &&
+                window.checkoutConfig.payment.alyapay.widget.detail
+                ? window.checkoutConfig.payment.alyapay.widget.detail
+                : 'modal';
+        },
+
+        getWidgetLogoPosition: function () {
+            return window.checkoutConfig.payment.alyapay &&
+                window.checkoutConfig.payment.alyapay.widget &&
+                window.checkoutConfig.payment.alyapay.widget.logo_position
+                ? window.checkoutConfig.payment.alyapay.widget.logo_position
+                : 'right';
         },
 
         getWidgetLang: function () {
