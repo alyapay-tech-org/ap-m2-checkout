@@ -1,0 +1,16 @@
+<?php
+/** @var \AlyaPay\Payment\Block\Checkout\SuccessInfo $block */
+/** @var \Magento\Framework\Escaper $escaper */
+
+$order = $block->getOrder();
+?>
+<?php if ($order && $order->getId()): ?>
+<div class="alyapay-success-info">
+    <p class="alyapay-success-info__message">
+        <?= $escaper->escapeHtml(__('Your payment via AlyaPay has been confirmed.')) ?>
+    </p>
+    <p class="alyapay-success-info__details">
+        <?= $escaper->escapeHtml(__('Order %1 – %2', $order->getRealOrderId(), $block->getFormattedTotal($order))) ?>
+    </p>
+</div>
+<?php endif; ?>
