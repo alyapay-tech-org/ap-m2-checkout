@@ -38,8 +38,7 @@ define([
     function getWidgetConfig() {
         var w = window.checkoutConfig && window.checkoutConfig.payment && window.checkoutConfig.payment.alyapay && window.checkoutConfig.payment.alyapay.widget;
         if (!w) return null;
-        var locale = (window.checkoutConfig.storeLocale || 'en_US');
-        var lang = locale.indexOf('fr') === 0 ? 'fr' : (locale.indexOf('ar') === 0 ? 'ar' : 'en');
+        var lang = (w.lang && w.lang.length) ? w.lang : 'en';
         return {
             price: getTotals(),
             currency: w.currency || 'MAD',

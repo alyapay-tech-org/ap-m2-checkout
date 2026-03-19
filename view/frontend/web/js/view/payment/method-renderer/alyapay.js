@@ -81,10 +81,11 @@ define([
         },
 
         getWidgetLang: function () {
+            var w = window.checkoutConfig && window.checkoutConfig.payment && window.checkoutConfig.payment.alyapay && window.checkoutConfig.payment.alyapay.widget;
+            if (w && w.lang && w.lang.length) return w.lang;
             var locale = window.checkoutConfig.storeLocale || 'en_US';
-            if (locale.indexOf('fr') === 0) return 'fr';
-            if (locale.indexOf('ar') === 0) return 'ar';
-            return 'en';
+            var lang = locale.indexOf('_') > 0 ? locale.substring(0, locale.indexOf('_')) : locale;
+            return (lang === 'fr' || lang === 'ar') ? lang : 'en';
         }
     });
 });

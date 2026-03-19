@@ -179,16 +179,6 @@ class CreditPromotion extends Template
 
     public function getWidgetLang(): string
     {
-        try {
-            $locale = $this->storeManager->getStore()->getLocaleCode() ?: 'en_US';
-            if (str_starts_with($locale, 'fr')) {
-                return 'fr';
-            }
-            if (str_starts_with($locale, 'ar')) {
-                return 'ar';
-            }
-        } catch (\Throwable $e) {
-        }
-        return 'en';
+        return $this->config->getWidgetLang();
     }
 }

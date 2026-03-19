@@ -12,10 +12,5 @@
                 <value id="alyapay_images" type="host">cdn.alyapay.com</value>
             </values>
         </policy>
-        <policy id="font-src">
-            <values>
-                <value id="alyapay_fonts" type="host">cdn.alyapay.com</value>
-            </values>
-        </policy>
     </policies>
 </csp_whitelist>

@@ -1,16 +1,147 @@
 <?php
+/**
+ * AlyaPay BNPL — Order Success / Thank You Page
+ * Trilingual: English / Français / العربية (RTL)
+ */
 /** @var \AlyaPay\Payment\Block\Checkout\SuccessInfo $block */
 /** @var \Magento\Framework\Escaper $escaper */
 
-$order = $block->getOrder();
+$orderId           = $block->getOrderId()             ?? '';
+$orderDate         = $block->getOrderDate()           ?? '';
+$orderTotal        = $block->getOrderTotal()          ?? '';
+$installmentAmt    = $block->getInstallmentAmount()   ?? '';
+$installmentCount  = (int)($block->getInstallmentCount() ?? 4);
+$installments      = $block->getInstallments()        ?? [];
+$viewOrderUrl      = $block->getViewOrderUrl()        ?? '#';
+$continueUrl       = $block->getContinueShoppingUrl() ?? '#';
+$locale            = $block->getLocale()              ?? 'fr';
+
+$i18n = [
+    'en' => [
+        'dir' => 'ltr', 'title' => 'Order confirmed',
+        'sub' => 'Your ' . $installmentCount . '-installment plan is active. We\'ll handle the rest.',
+        'summary' => 'Order summary', 'label_order' => 'Order', 'label_date' => 'Date',
+        'label_method' => 'Payment method', 'label_total' => 'Total',
+        'install_note' => $installmentCount . ' installments of ' . $installmentAmt . ' each',
+        'schedule' => 'Payment schedule', 'auto_note' => 'Installments will be deducted automatically on each due date.',
+        'paid' => 'Paid', 'upcoming' => 'Upcoming', 'scheduled' => 'Scheduled',
+        'btn_view' => 'View order', 'btn_shop' => 'Continue shopping',
+        'method_value' => 'AlyaPay · ' . $installmentCount . '×',
+        'powered' => 'Secured by <strong>AlyaPay</strong> · Buy Now, Pay Later',
+    ],
+    'fr' => [
+        'dir' => 'ltr', 'title' => 'Commande confirmée',
+        'sub' => 'Votre plan en ' . $installmentCount . ' versements est actif. Nous gérons le reste.',
+        'summary' => 'Récapitulatif de commande', 'label_order' => 'Commande', 'label_date' => 'Date',
+        'label_method' => 'Mode de paiement', 'label_total' => 'Total',
+        'install_note' => $installmentCount . ' versements de ' . $installmentAmt . ' chacun',
+        'schedule' => 'Échéancier de paiement', 'auto_note' => 'Les versements seront prélevés automatiquement à chaque échéance.',
+        'paid' => 'Payé', 'upcoming' => 'À venir', 'scheduled' => 'Planifié',
+        'btn_view' => 'Voir la commande', 'btn_shop' => 'Continuer les achats',
+        'method_value' => 'AlyaPay · ' . $installmentCount . '×',
+        'powered' => 'Sécurisé par <strong>AlyaPay</strong> · Achetez maintenant, payez plus tard',
+    ],
+    'ar' => [
+        'dir' => 'rtl', 'title' => 'تم تأكيد الطلب',
+        'sub' => 'خطة التقسيط على ' . $installmentCount . ' أقساط نشطة. سنتولى الباقي.',
+        'summary' => 'ملخص الطلب', 'label_order' => 'الطلب', 'label_date' => 'التاريخ',
+        'label_method' => 'طريقة الدفع', 'label_total' => 'المجموع',
+        'install_note' => $installmentCount . ' أقساط بقيمة ' . $installmentAmt . ' لكل منها',
+        'schedule' => 'جدول الدفع', 'auto_note' => 'سيتم خصم الأقساط تلقائياً في كل تاريخ استحقاق.',
+        'paid' => 'مدفوع', 'upcoming' => 'قادم', 'scheduled' => 'مجدول',
+        'btn_view' => 'عرض الطلب', 'btn_shop' => 'مواصلة التسوق',
+        'method_value' => 'AlyaPay · ' . $installmentCount . '×',
+        'powered' => 'مدعوم من <strong>AlyaPay</strong> · اشترِ الآن وادفع لاحقاً',
+    ],
+];
+if (!isset($i18n[$locale])) $locale = 'fr';
+$t = $i18n[$locale];
+$dir = $t['dir'];
+$statusLabels = ['paid' => $t['paid'], 'upcoming' => $t['upcoming'], 'scheduled' => $t['scheduled']];
+$statusClasses = ['paid' => 'alya-badge--paid', 'upcoming' => 'alya-badge--upcoming', 'scheduled' => 'alya-badge--scheduled'];
+$dotClasses = ['paid' => 'alya-dot alya-dot--paid', 'upcoming' => 'alya-dot alya-dot--upcoming', 'scheduled' => 'alya-dot alya-dot--scheduled'];
+
+$rows = !empty($installments) ? $installments : [];
+if (empty($rows) && $installmentCount > 0) {
+    for ($i = 0; $i < $installmentCount; $i++) {
+        $status = $i === 0 ? 'paid' : ($i === 1 ? 'upcoming' : 'scheduled');
+        $rows[] = ['label' => '—', 'date' => '', 'amount' => $installmentAmt, 'status' => $status];
+    }
+}
 ?>
-<?php if ($order && $order->getId()): ?>
-<div class="alyapay-success-info">
-    <p class="alyapay-success-info__message">
-        <?= $escaper->escapeHtml(__('Your payment via AlyaPay has been confirmed.')) ?>
-    </p>
-    <p class="alyapay-success-info__details">
-        <?= $escaper->escapeHtml(__('Order %1 – %2', $order->getRealOrderId(), $block->getFormattedTotal($order))) ?>
-    </p>
+<style>
+.alya-success *{box-sizing:border-box;margin:0;padding:0;}.alya-success{max-width:560px;margin:0 auto;padding:2rem 1rem 3rem;color:inherit;}
+.alya-success[dir="rtl"]{text-align:right;}
+.alya-check-ring{width:64px;height:64px;border-radius:50%;background:rgba(5,223,114,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;}
+.alya-check-ring svg{width:28px;height:28px;}
+.alya-check-ring svg path{stroke:#05df72;}
+.alya-hero-title{font-size:22px;font-weight:500;text-align:center;margin-bottom:6px;}
+.alya-hero-sub{font-size:14px;text-align:center;color:#6b7280;margin-bottom:1.5rem;}
+.alya-card{background:#fff;border:0.5px solid rgba(0,0,0,.1);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.alya-card-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#9ca3af;margin-bottom:1rem;}
+.alya-order-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;color:#6b7280;}
+.alya-order-row.alya-order-row--bordered{border-bottom:0.5px solid rgba(0,0,0,.08);}
+.alya-order-row strong{font-weight:500;color:#111;font-size:13px;}
+.alya-logo-inline{height:20px;width:auto;vertical-align:middle;margin-right:4px;}
+.alya-total-row{display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:4px;border-top:0.5px solid rgba(0,0,0,.15);}
+.alya-total-label{font-size:13px;font-weight:500;}
+.alya-total-amount{font-size:20px;font-weight:500;}
+.alya-install-note{font-size:12px;color:#3333cc;background:oklch(94% .04 272.28);border-radius:8px;padding:8px 12px;margin-top:12px;text-align:center;}
+.alya-timeline{position:relative;padding-left:28px;}[dir="rtl"] .alya-timeline{padding-left:0;padding-right:28px;}
+.alya-timeline::before{content:'';position:absolute;left:9px;top:8px;bottom:8px;width:1px;background:rgba(0,0,0,.12);}[dir="rtl"] .alya-timeline::before{left:auto;right:9px;}
+.alya-step{position:relative;margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:12px;}.alya-step:last-child{margin-bottom:0;}
+.alya-dot{position:absolute;left:-28px;top:3px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}[dir="rtl"] .alya-dot{left:auto;right:-28px;}
+.alya-dot--paid{background:rgba(5,223,114,.15);border:1.5px solid #05df72;}
+.alya-dot--upcoming{background:#f9fafb;border:1.5px solid #d1d5db;}
+.alya-dot--scheduled{background:#f9fafb;border:1.5px dashed #d1d5db;}
+.alya-dot__inner-paid{width:7px;height:7px;border-radius:50%;background:#05df72;}
+.alya-dot__num{font-size:9px;font-weight:500;color:#9ca3af;}
+.alya-step-body{flex:1;display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:4px;}
+.alya-step-title{font-size:13px;font-weight:500;margin-bottom:2px;}
+.alya-step-date{font-size:12px;color:#6b7280;}
+.alya-step-amount{font-size:14px;font-weight:500;text-align:right;}[dir="rtl"] .alya-step-amount{text-align:left;}
+.alya-step-amount--paid{color:#05df72;}.alya-step-amount--upcoming{color:#111;}.alya-step-amount--scheduled{color:#9ca3af;}
+.alya-badge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:6px;margin-top:3px;display:inline-block;}
+.alya-badge--paid{background:rgba(5,223,114,.15);color:#05df72;}
+.alya-badge--upcoming{background:#fefce8;color:#b45309;}
+.alya-badge--scheduled{background:#f3f4f6;color:#9ca3af;}
+.alya-auto-note{font-size:12px;color:#6b7280;margin-top:1rem;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;}
+.alya-actions{display:flex;gap:10px;margin-top:1.25rem;}
+.alya-btn{flex:1;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid rgba(0,0,0,.15);text-align:center;text-decoration:none;display:block;background:transparent;color:#111;font-family:inherit;transition:opacity .15s;}
+.alya-btn:hover{opacity:.75;}.alya-btn--primary{background:#3333cc;color:#fff;border-color:transparent;}
+.alya-powered{font-size:11px;color:#9ca3af;text-align:center;margin-top:1.5rem;}.alya-powered strong{color:#6b7280;font-weight:500;}
+.alya-method-value{display:flex;align-items:center;gap:6px;}
+.alya-logo-inline{height:18px;width:auto;vertical-align:middle;display:inline-block;margin-top:3px;}
+</style>
+<div class="alya-success" id="alya-success-block" dir="<?= $block->escapeHtmlAttr($dir) ?>">
+    <div class="alya-check-ring"><svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 14.5L11.5 20L22 9" stroke="#05df72" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1 class="alya-hero-title"><?= $block->escapeHtml($t['title']) ?></h1>
+    <p class="alya-hero-sub"><?= $block->escapeHtml($t['sub']) ?></p>
+    <div class="alya-card">
+        <p class="alya-card-label"><?= $block->escapeHtml($t['summary']) ?></p>
+        <div class="alya-order-row alya-order-row--bordered"><span><?= $block->escapeHtml($t['label_order']) ?></span><strong>#<?= $block->escapeHtml($orderId) ?></strong></div>
+        <div class="alya-order-row alya-order-row--bordered"><span><?= $block->escapeHtml($t['label_date']) ?></span><strong><?= $block->escapeHtml($orderDate) ?></strong></div>
+        <div class="alya-order-row"><span><?= $block->escapeHtml($t['label_method']) ?></span><strong class="alya-method-value"><img src="https://cdn.alyapay.com/alya-logo.svg" alt="AlyaPay" class="alya-logo-inline" /> <?= $block->escapeHtml($installmentCount) ?>×</strong></div>
+        <div class="alya-total-row"><span class="alya-total-label"><?= $block->escapeHtml($t['label_total']) ?></span><span class="alya-total-amount"><?= $block->escapeHtml($orderTotal) ?></span></div>
+    </div>
+    <?php if ($installmentCount > 0 && !empty($rows)): ?>
+    <div class="alya-card">
+        <p class="alya-card-label"><?= $block->escapeHtml($t['schedule']) ?></p>
+        <div class="alya-timeline">
+            <?php foreach ($rows as $idx => $row): $status = $row['status'] ?? 'scheduled'; $stepNum = $idx + 1; ?>
+            <div class="alya-step">
+                <div class="<?= $block->escapeHtmlAttr($dotClasses[$status] ?? $dotClasses['scheduled']) ?>">
+                    <?php if ($status === 'paid'): ?><div class="alya-dot__inner-paid"></div><?php else: ?><span class="alya-dot__num"><?= (int)$stepNum ?></span><?php endif; ?>
+                </div>
+                <div class="alya-step-body">
+                    <div><p class="alya-step-title"><?= $block->escapeHtml($row['label'] ?? '') ?></p><?php if (!empty($row['date'])): ?><p class="alya-step-date"><?= $block->escapeHtml($row['date']) ?></p><?php endif; ?></div>
+                    <div><p class="alya-step-amount alya-step-amount--<?= $block->escapeHtmlAttr($status) ?>"><?= $block->escapeHtml($row['amount'] ?? $installmentAmt) ?></p><span class="alya-badge <?= $block->escapeHtmlAttr($statusClasses[$status] ?? $statusClasses['scheduled']) ?>"><?= $block->escapeHtml($statusLabels[$status] ?? $status) ?></span></div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <p class="alya-auto-note"><?= $block->escapeHtml($t['auto_note']) ?></p>
+    </div>
+    <?php endif; ?>
+    <p class="alya-powered"><?= /* @noEscape */ $t['powered'] ?></p>
 </div>
-<?php endif; ?>

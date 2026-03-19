@@ -8,6 +8,7 @@
 
 namespace AlyaPay\Payment\Model\Ui;
 
+use AlyaPay\Payment\Model\Config;
 use Magento\Checkout\Model\ConfigProviderInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\UrlInterface;
@@ -40,18 +41,26 @@ class ConfigProvider implements ConfigProviderInterface
     private $storeManager;
 
     /**
+     * @var Config
+     */
+    private $alyapayConfig;
+
+    /**
      * @param ScopeConfigInterface $scopeConfig
      * @param UrlInterface $urlBuilder
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param Config $alyapayConfig
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         UrlInterface $urlBuilder,
-        \Magento\Store\Model\StoreManagerInterface $storeManager
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
+        Config $alyapayConfig
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->urlBuilder = $urlBuilder;
         $this->storeManager = $storeManager;
+        $this->alyapayConfig = $alyapayConfig;
     }
 
     /**
@@ -77,6 +86,7 @@ class ConfigProvider implements ConfigProviderInterface
                 $widgetCurrency = 'MAD';
             }
         }
+        $widgetLang = $this->alyapayConfig->getWidgetLang();
 
         return [
             'payment' => [
@@ -91,6 +101,7 @@ class ConfigProvider implements ConfigProviderInterface
                         'detail' => $widgetDetail,
                         'logo_position' => $widgetLogoPosition,
                         'currency' => trim($widgetCurrency),
+                        'lang' => $widgetLang,
                     ],
                 ],
             ],

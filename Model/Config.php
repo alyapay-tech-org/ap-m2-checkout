@@ -358,4 +358,27 @@ class Config
             return 'MAD';
         }
     }
+
+    /**
+     * Widget language derived from store locale. Returns fr, en, or ar.
+     * Single source of truth — all AlyaPay UI reads from here.
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getWidgetLang(?int $storeId = null): string
+    {
+        try {
+            $store = $this->storeManager->getStore($storeId);
+            $locale = $store->getLocaleCode();
+            if (empty($locale)) {
+                $locale = $this->scopeConfig->getValue('general/locale/code', ScopeInterface::SCOPE_STORE, $storeId);
+            }
+            $locale = $locale ?: 'en_US';
+            $lang = strstr($locale, '_', true) ?: $locale;
+            return in_array($lang, ['fr', 'en', 'ar'], true) ? $lang : 'en';
+        } catch (\Throwable $e) {
+        }
+        return 'en';
+    }
 }
