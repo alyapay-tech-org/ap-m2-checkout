@@ -111,6 +111,16 @@ class WebhookProcessor implements WebhookProcessorInterface
                 if ($order->getState() === \Magento\Sales\Model\Order::STATE_CLOSED) {
                     return true;
                 }
+
+                // Customer switched payment method — webhook belongs to abandoned AlyaPay attempt, ignore it.
+                if ($order->getPayment()->getMethod() !== 'alyapay') {
+                    $this->logger->info('AlyaPay webhook: ignoring ' . $event . ' — payment method changed', [
+                        'increment_id'   => $order->getIncrementId(),
+                        'payment_method' => $order->getPayment()->getMethod(),
+                    ]);
+                    return true;
+                }
+
                 $comment = $event === self::EVENT_EXPIRED
                     ? sprintf('AlyaPay: Transaction expired (webhook). Transaction ID: %s', $transactionId)
                     : sprintf('AlyaPay: Payment cancelled (webhook). Transaction ID: %s', $transactionId);
