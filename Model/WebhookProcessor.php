@@ -101,6 +101,13 @@ class WebhookProcessor implements WebhookProcessorInterface
                 if ($order->hasInvoices()) {
                     return true;
                 }
+                if ($order->getPayment()->getMethod() !== 'alyapay') {
+                    $this->logger->info('AlyaPay webhook: ignoring ' . $event . ' — payment method changed', [
+                        'increment_id'   => $order->getIncrementId(),
+                        'payment_method' => $order->getPayment()->getMethod(),
+                    ]);
+                    return true;
+                }
                 $comment = sprintf('AlyaPay: Payment approved (webhook). Transaction ID: %s', $transactionId);
                 $targetStatus = $this->config->getApprovedStatus($storeId);
                 $this->orderHelper->approveAndCaptureOrder($order, $transactionId, $targetStatus, $comment);

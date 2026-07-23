@@ -8,6 +8,11 @@
                 <title>AlyaPay</title>
                 <model>AlyaPay\Payment\Model\PaymentMethod</model>
                 <group>alyapay</group>
+                <!-- Must be non-empty or Magento\Sales\Model\Order\Payment::place() skips the
+                     isInitializeNeeded() branch entirely and silently defaults the order to
+                     STATE_NEW instead of calling PaymentMethod::initialize() (STATE_PENDING_PAYMENT).
+                     The actual value is unused by initialize() itself; any truthy action works. -->
+                <payment_action>authorize</payment_action>
                 <api_base_url>https://sandbox-api.alyapay.com</api_base_url>
                 <status_approved>processing</status_approved>
                 <status_canceled>canceled</status_canceled>

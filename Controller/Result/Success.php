@@ -8,13 +8,12 @@
 
 namespace AlyaPay\Payment\Controller\Result;
 
-use AlyaPay\Payment\Model\Api\StatusService;
+use AlyaPay\Payment\Model\Api\VendorTransactionService;
 use AlyaPay\Payment\Model\Config;
 use AlyaPay\Payment\Model\Error\Context;
 use AlyaPay\Payment\Model\Error\Handler as ErrorHandler;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
-use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Message\ManagerInterface;
@@ -24,6 +23,7 @@ use Psr\Log\LoggerInterface;
 class Success implements HttpGetActionInterface
 {
     private const APPROVED_STATUSES = ['APPROVED', 'COMPLETED'];
+    private const TERMINAL_FAILED_STATUSES = ['CANCELED', 'EXPIRED', 'DECLINED', 'FAILED'];
 
     /**
      * @var CheckoutSession
@@ -31,9 +31,9 @@ class Success implements HttpGetActionInterface
     private $checkoutSession;
 
     /**
-     * @var StatusService
+     * @var VendorTransactionService
      */
-    private $statusService;
+    private $vendorTransactionService;
 
     /**
      * @var RedirectFactory
@@ -61,11 +61,6 @@ class Success implements HttpGetActionInterface
     private $urlBuilder;
 
     /**
-     * @var RequestInterface
-     */
-    private $request;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -77,36 +72,33 @@ class Success implements HttpGetActionInterface
 
     /**
      * @param CheckoutSession $checkoutSession
-     * @param StatusService $statusService
+     * @param VendorTransactionService $vendorTransactionService
      * @param RedirectFactory $resultRedirectFactory
      * @param ManagerInterface $messageManager
      * @param \AlyaPay\Payment\Helper\Order $orderHelper
      * @param Config $config
      * @param UrlInterface $urlBuilder
-     * @param RequestInterface $request
      * @param LoggerInterface $logger
      * @param ErrorHandler $errorHandler
      */
     public function __construct(
         CheckoutSession $checkoutSession,
-        StatusService $statusService,
+        VendorTransactionService $vendorTransactionService,
         RedirectFactory $resultRedirectFactory,
         ManagerInterface $messageManager,
         \AlyaPay\Payment\Helper\Order $orderHelper,
         Config $config,
         UrlInterface $urlBuilder,
-        RequestInterface $request,
         LoggerInterface $logger,
         ErrorHandler $errorHandler
     ) {
         $this->checkoutSession = $checkoutSession;
-        $this->statusService = $statusService;
+        $this->vendorTransactionService = $vendorTransactionService;
         $this->resultRedirectFactory = $resultRedirectFactory;
         $this->messageManager = $messageManager;
         $this->orderHelper = $orderHelper;
         $this->config = $config;
         $this->urlBuilder = $urlBuilder;
-        $this->request = $request;
         $this->logger = $logger;
         $this->errorHandler = $errorHandler;
     }
@@ -119,10 +111,7 @@ class Success implements HttpGetActionInterface
         $redirect = $this->resultRedirectFactory->create();
         $redirect->setPath('checkout/cart');
 
-        $urlStatus = strtoupper((string) ($this->request->getParam('status') ?? ''));
-        $transactionId = $this->request->getParam('transaction_id') ?? $this->request->getParam('transactionId');
         $incrementId = $this->checkoutSession->getLastRealOrderId();
-
         if (!$incrementId) {
             $this->messageManager->addErrorMessage(__('Invalid return from payment.'));
             return $redirect;
@@ -134,62 +123,58 @@ class Success implements HttpGetActionInterface
             return $redirect;
         }
 
-        if ($urlStatus === 'FAILURE') {
-            $this->messageManager->addErrorMessage(__('Payment failed. Please try again or choose another payment method.'));
-            $this->orderHelper->cancelOrder($order, 'Payment failed (URL status: FAILURE)');
-            $this->orderHelper->restoreQuote();
-            return $redirect;
-        }
+        $storeId = (int) $order->getStoreId();
 
-        if ($urlStatus === 'SUCCESS' && $transactionId) {
-            try {
-                $statusResponse = $this->statusService->getStatus($transactionId, (int) $order->getStoreId());
-                $apiStatus = strtoupper($statusResponse['status'] ?? '');
-
-                if (in_array($apiStatus, self::APPROVED_STATUSES)) {
-                    $storeId = (int) $order->getStoreId();
-                    $comment = (string) __('AlyaPay payment approved (fallback). Transaction ID: %1', $transactionId);
-                    $targetStatus = $this->config->getApprovedStatus($storeId);
-                    $this->orderHelper->approveAndCaptureOrder($order, (string) $transactionId, $targetStatus, $comment);
-                    $this->logger->info('AlyaPay payment approved (Success fallback)', [
-                        'increment_id' => $order->getIncrementId(),
-                        'transaction_id' => $transactionId,
-                        'api_status' => $apiStatus,
-                    ]);
-                    $redirect->setUrl($this->urlBuilder->getUrl('checkout/onepage/success'));
-                    return $redirect;
-                }
-
-                $failedStatuses = ['CANCELED', 'EXPIRED', 'DECLINED', 'FAILED'];
-                if (in_array($apiStatus, $failedStatuses)) {
-                    $this->messageManager->addErrorMessage(
-                        __('Payment was not successful (status: %1).', $apiStatus)
-                    );
-                    $this->orderHelper->cancelOrder($order, 'Payment failed: ' . $apiStatus);
-                    $this->orderHelper->restoreQuote();
-                    return $redirect;
-                }
-
-                $this->messageManager->addNoticeMessage(
-                    __('Payment status: %1. Your order is being processed.', $apiStatus)
-                );
-                $redirect->setUrl($this->urlBuilder->getUrl('checkout/onepage/success'));
-            } catch (\Throwable $e) {
-                $result = $this->errorHandler->handle($e, Context::STATUS_CHECK);
-                $this->messageManager->addErrorMessage($result->getUserMessage());
-                $this->orderHelper->cancelOrder($order, 'Status verification failed: ' . $e->getMessage());
-                $this->orderHelper->restoreQuote();
-            }
-            return $redirect;
-        }
-
-        if ($urlStatus === 'CANCELED' || $urlStatus === 'EXPIRED') {
-            $this->messageManager->addWarningMessage(
-                __('Payment was %1. Webhooks will update order status if needed.', strtolower($urlStatus))
+        // The URL's `status`/`transaction_id` params are not signed and not authoritative —
+        // AlyaPay's transaction stays PENDING until it actually reaches APPROVED/COMPLETED or
+        // CANCELED/EXPIRED. Always verify via the order's own vendor reference (works even
+        // without any query params) before deciding what happened.
+        try {
+            $statusResponse = $this->vendorTransactionService->getByVendorReference(
+                (string) $order->getIncrementId(),
+                $storeId
             );
-            $this->orderHelper->restoreQuote();
-            $redirect->setPath('checkout');
-            return $redirect;
+            $apiStatus = strtoupper($statusResponse['status'] ?? '');
+            $transactionId = (string) ($statusResponse['id'] ?? '');
+
+            if (in_array($apiStatus, self::APPROVED_STATUSES, true)) {
+                $comment = (string) __('AlyaPay payment approved (fallback). Transaction ID: %1', $transactionId);
+                $targetStatus = $this->config->getApprovedStatus($storeId);
+                $this->orderHelper->approveAndCaptureOrder($order, $transactionId, $targetStatus, $comment);
+                $this->logger->info('AlyaPay payment approved (Success fallback)', [
+                    'increment_id' => $order->getIncrementId(),
+                    'transaction_id' => $transactionId,
+                    'api_status' => $apiStatus,
+                ]);
+                $redirect->setUrl($this->urlBuilder->getUrl('checkout/onepage/success'));
+                return $redirect;
+            }
+
+            if (in_array($apiStatus, self::TERMINAL_FAILED_STATUSES, true)) {
+                $this->messageManager->addErrorMessage(
+                    __('Payment was not successful (status: %1).', $apiStatus)
+                );
+                $this->orderHelper->cancelOrder($order, 'Payment failed: ' . $apiStatus);
+                $this->orderHelper->restoreQuote();
+                return $redirect;
+            }
+
+            // PENDING/PROCESSING — not resolved yet. Don't cancel; webhook or cron
+            // reconciliation will close it out once AlyaPay reaches a terminal state.
+            $this->messageManager->addNoticeMessage(
+                __('We are confirming your payment status. Your order will update shortly.')
+            );
+        } catch (\Throwable $e) {
+            // Lookup failed (network/API issue) — not proof the payment failed. Leave the
+            // order as pending_payment rather than cancelling on an inconclusive check.
+            $result = $this->errorHandler->handle($e, Context::STATUS_CHECK);
+            $this->logger->warning('AlyaPay Success: vendor lookup failed, leaving order pending', [
+                'increment_id' => $order->getIncrementId(),
+                'error' => $result->getLogMessage(),
+            ]);
+            $this->messageManager->addNoticeMessage(
+                __('We are confirming your payment status. Your order will update shortly.')
+            );
         }
 
         return $redirect;

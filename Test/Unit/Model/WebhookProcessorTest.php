@@ -97,6 +97,21 @@ class WebhookProcessorTest extends TestCase
         $this->assertTrue($this->processor->process($payload));
     }
 
+    public function testProcessApprovedOrderPaymentMethodChangedDoesNotApprove(): void
+    {
+        $payload = '{"event":"transaction.approved","data":{"id":"txn_1","vendorReference":"000000001"}}';
+        $this->json->method('unserialize')->willReturn([
+            'event' => 'transaction.approved',
+            'data' => ['id' => 'txn_1', 'vendorReference' => '000000001'],
+        ]);
+
+        $order = $this->createOrderMock(SalesOrder::STATE_PENDING_PAYMENT, false, 'checkmo');
+        $this->orderHelper->method('getOrderByIncrementId')->willReturn($order);
+
+        $this->orderHelper->expects($this->never())->method('approveAndCaptureOrder');
+        $this->assertTrue($this->processor->process($payload));
+    }
+
     public function testProcessCancelledEventCallsApplyWebhookStatus(): void
     {
         $payload = '{"event":"transaction.cancelled","data":{"id":"txn_2","vendorReference":"000000002"}}';
@@ -214,13 +229,17 @@ class WebhookProcessorTest extends TestCase
     /**
      * @return SalesOrder|MockObject
      */
-    private function createOrderMock(string $state, bool $hasInvoices)
+    private function createOrderMock(string $state, bool $hasInvoices, string $paymentMethod = 'alyapay')
     {
+        $payment = $this->createMock(\Magento\Sales\Model\Order\Payment::class);
+        $payment->method('getMethod')->willReturn($paymentMethod);
+
         $order = $this->createMock(SalesOrder::class);
         $order->method('getState')->willReturn($state);
         $order->method('hasInvoices')->willReturn($hasInvoices);
         $order->method('getStoreId')->willReturn(1);
         $order->method('getIncrementId')->willReturn('000000001');
+        $order->method('getPayment')->willReturn($payment);
         return $order;
     }
 }

@@ -120,6 +120,7 @@ class Index implements HttpGetActionInterface
             $payment = $order->getPayment();
             $payment->setAdditionalInformation(PaymentMethod::CHECKOUT_TOKEN, $checkoutToken);
             $payment->setAdditionalInformation(PaymentMethod::PAYMENT_INTENT_ID, $paymentIntentId);
+            $payment->setAdditionalInformation(PaymentMethod::REDIRECTED_AT, (string) time());
             $payment->save();
 
             return $this->resultRedirectFactory->create()->setUrl($checkoutUrl);

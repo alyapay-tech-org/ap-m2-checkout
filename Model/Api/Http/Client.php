@@ -10,7 +10,7 @@ namespace AlyaPay\Payment\Model\Api\Http;
 
 use AlyaPay\Payment\Exception\AlyaPayApiException;
 use AlyaPay\Payment\Model\Config;
-use Magento\Framework\HTTP\Client\Curl;
+use Magento\Framework\HTTP\Client\CurlFactory;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
 
@@ -19,9 +19,9 @@ class Client
     private const CONTENT_TYPE = 'application/json';
 
     /**
-     * @var Curl
+     * @var CurlFactory
      */
-    private $curl;
+    private $curlFactory;
 
     /**
      * @var Config
@@ -39,18 +39,18 @@ class Client
     private $logger;
 
     /**
-     * @param Curl $curl
+     * @param CurlFactory $curlFactory
      * @param Config $config
      * @param Json $json
      * @param LoggerInterface $logger
      */
     public function __construct(
-        Curl $curl,
+        CurlFactory $curlFactory,
         Config $config,
         Json $json,
         LoggerInterface $logger
     ) {
-        $this->curl = $curl;
+        $this->curlFactory = $curlFactory;
         $this->config = $config;
         $this->json = $json;
         $this->logger = $logger;
@@ -120,14 +120,15 @@ class Client
     public function get(string $path, array $extraHeaders = [], ?int $storeId = null): array
     {
         $url = $this->config->getApiBaseUrl($storeId) . $path;
-        $this->curl->addHeader('Content-Type', self::CONTENT_TYPE);
+        $curl = $this->curlFactory->create();
+        $curl->addHeader('Content-Type', self::CONTENT_TYPE);
         foreach ($extraHeaders as $name => $value) {
-            $this->curl->addHeader($name, $value);
+            $curl->addHeader($name, $value);
         }
-        $this->curl->get($url);
+        $curl->get($url);
 
-        $response = $this->curl->getBody();
-        $status = $this->curl->getStatus();
+        $response = $curl->getBody();
+        $status = $curl->getStatus();
 
         if ($this->config->isDebugEnabled($storeId)) {
             $this->logger->debug('AlyaPay API GET', [
@@ -157,20 +158,15 @@ class Client
         $url = $this->config->getApiBaseUrl($storeId) . $path;
         $body = $this->json->serialize($data);
 
-        // $this->logger->info('AlyaPay API POST payload', [
-        //     'url' => $path,
-        //     'payload' => $data,
-        //     'vendorReference_in_payload' => $data['vendorReference'] ?? '(not set)',
-        // ]);
-
-        $this->curl->addHeader('Content-Type', self::CONTENT_TYPE);
+        $curl = $this->curlFactory->create();
+        $curl->addHeader('Content-Type', self::CONTENT_TYPE);
         foreach ($extraHeaders as $name => $value) {
-            $this->curl->addHeader($name, $value);
+            $curl->addHeader($name, $value);
         }
-        $this->curl->post($url, $body);
+        $curl->post($url, $body);
 
-        $response = $this->curl->getBody();
-        $status = $this->curl->getStatus();
+        $response = $curl->getBody();
+        $status = $curl->getStatus();
 
         if ($this->config->isDebugEnabled($storeId)) {
             $this->logger->debug('AlyaPay API POST', [
@@ -201,15 +197,16 @@ class Client
         $url = $this->config->getApiBaseUrl($storeId) . $path;
         $body = $this->json->serialize($data);
 
-        $this->curl->addHeader('Content-Type', self::CONTENT_TYPE);
+        $curl = $this->curlFactory->create();
+        $curl->addHeader('Content-Type', self::CONTENT_TYPE);
         foreach ($extraHeaders as $name => $value) {
-            $this->curl->addHeader($name, $value);
+            $curl->addHeader($name, $value);
         }
-        $this->curl->setOption(CURLOPT_CUSTOMREQUEST, 'PUT');
-        $this->curl->post($url, $body);
+        $curl->setOption(CURLOPT_CUSTOMREQUEST, 'PUT');
+        $curl->post($url, $body);
 
-        $response = $this->curl->getBody();
-        $status = $this->curl->getStatus();
+        $response = $curl->getBody();
+        $status = $curl->getStatus();
 
         if ($this->config->isDebugEnabled($storeId)) {
             $this->logger->debug('AlyaPay API PUT', [

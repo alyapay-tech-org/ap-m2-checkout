@@ -28,6 +28,7 @@ class PaymentMethod extends AbstractMethod
     public const PAYMENT_INTENT_ID = 'alyapay_payment_intent_id';
     public const CHECKOUT_TOKEN = 'alyapay_checkout_token';
     public const TRANSACTION_ID = 'alyapay_transaction_id';
+    public const REDIRECTED_AT = 'alyapay_redirected_at';
 
     /**
      * @var string

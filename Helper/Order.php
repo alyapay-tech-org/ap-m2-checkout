@@ -19,9 +19,13 @@ use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 use Magento\Sales\Model\Service\InvoiceService;
 use Magento\Framework\DB\TransactionFactory;
+use Magento\Framework\Lock\LockManagerInterface;
 
 class Order extends AbstractHelper
 {
+    private const LOCK_PREFIX = 'alyapay_order_capture_';
+    private const LOCK_TIMEOUT = 10;
+
     /**
      * @var SearchCriteriaBuilder
      */
@@ -63,6 +67,11 @@ class Order extends AbstractHelper
     private $appState;
 
     /**
+     * @var LockManagerInterface
+     */
+    private $lockManager;
+
+    /**
      * @param Context $context
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param OrderRepositoryInterface $orderRepository
@@ -72,6 +81,7 @@ class Order extends AbstractHelper
      * @param CheckoutSession $checkoutSession
      * @param ManagerInterface $messageManager
      * @param State $appState
+     * @param LockManagerInterface $lockManager
      */
     public function __construct(
         Context $context,
@@ -82,7 +92,8 @@ class Order extends AbstractHelper
         TransactionFactory $transactionFactory,
         CheckoutSession $checkoutSession,
         ManagerInterface $messageManager,
-        State $appState
+        State $appState,
+        LockManagerInterface $lockManager
     ) {
         parent::__construct($context);
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
@@ -93,6 +104,7 @@ class Order extends AbstractHelper
         $this->checkoutSession = $checkoutSession;
         $this->messageManager = $messageManager;
         $this->appState = $appState;
+        $this->lockManager = $lockManager;
     }
 
     /**
@@ -227,43 +239,60 @@ class Order extends AbstractHelper
         if (!$order->getId()) {
             return false;
         }
-        if ($order->getState() === \Magento\Sales\Model\Order::STATE_CANCELED) {
+
+        $lockName = self::LOCK_PREFIX . $order->getIncrementId();
+        if (!$this->lockManager->lock($lockName, self::LOCK_TIMEOUT)) {
+            $this->_logger->warning('AlyaPay: could not acquire capture lock, skipping', [
+                'increment_id' => $order->getIncrementId(),
+            ]);
             return false;
         }
-        if ($order->hasInvoices()) {
+
+        try {
+            // Re-fetch under lock: another process may have already captured/canceled
+            // this order while we were waiting (webhook vs browser-fallback race).
+            $order = $this->orderRepository->get($order->getId());
+
+            if ($order->getState() === \Magento\Sales\Model\Order::STATE_CANCELED) {
+                return false;
+            }
+            if ($order->hasInvoices()) {
+                return true;
+            }
+            if (!$order->canInvoice()) {
+                return false;
+            }
+
+            $payment = $order->getPayment();
+            $payment->setLastTransId($transactionId);
+            $payment->setTransactionId($transactionId);
+
+            $invoice = $this->invoiceService->prepareInvoice($order);
+            $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_OFFLINE);
+            $invoice->setTransactionId($transactionId);
+            $invoice->register();
+
+            $payment->addTransaction(
+                \Magento\Sales\Model\Order\Payment\Transaction::TYPE_CAPTURE,
+                $invoice,
+                true
+            );
+
+            $state = $this->getStateForStatus($targetStatus) ?: \Magento\Sales\Model\Order::STATE_PROCESSING;
+            $order->setState($state);
+            $order->setStatus($targetStatus);
+            $order->addCommentToStatusHistory($comment, $targetStatus);
+
+            $this->transactionFactory->create()
+                ->addObject($invoice)
+                ->addObject($payment)
+                ->addObject($order)
+                ->save();
+
             return true;
+        } finally {
+            $this->lockManager->unlock($lockName);
         }
-        if (!$order->canInvoice()) {
-            return false;
-        }
-
-        $payment = $order->getPayment();
-        $payment->setLastTransId($transactionId);
-        $payment->setTransactionId($transactionId);
-
-        $invoice = $this->invoiceService->prepareInvoice($order);
-        $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_OFFLINE);
-        $invoice->setTransactionId($transactionId);
-        $invoice->register();
-
-        $payment->addTransaction(
-            \Magento\Sales\Model\Order\Payment\Transaction::TYPE_CAPTURE,
-            $invoice,
-            true
-        );
-
-        $state = $this->getStateForStatus($targetStatus) ?: \Magento\Sales\Model\Order::STATE_PROCESSING;
-        $order->setState($state);
-        $order->setStatus($targetStatus);
-        $order->addCommentToStatusHistory($comment, $targetStatus);
-
-        $this->transactionFactory->create()
-            ->addObject($invoice)
-            ->addObject($payment)
-            ->addObject($order)
-            ->save();
-
-        return true;
     }
 
     /**
